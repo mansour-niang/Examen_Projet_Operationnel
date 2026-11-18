@@ -1,0 +1,202 @@
+### Requêtes de test de l'API (client HTTP d'IntelliJ)
+### Lancer l'application, puis exécuter les requêtes dans l'ordre.
+
+@host = http://localhost:8000/api/v1
+
+### ---------- Clients ----------
+
+### Créer un client
+POST {{host}}/clients
+Content-Type: application/json
+
+{
+  "firstname": "Awa",
+  "lastname": "Diop",
+  "email": "awa.diop@example.com"
+}
+
+> {% client.global.set("clientId", response.body.id); %}
+
+### Lister les clients
+GET {{host}}/clients
+
+### Détail d'un client
+GET {{host}}/clients/{{clientId}}
+
+### Modifier un client
+PUT {{host}}/clients/{{clientId}}
+Content-Type: application/json
+
+{
+  "firstname": "Awa",
+  "lastname": "Ndiaye",
+  "email": "awa.diop@example.com"
+}
+
+### Erreur 400 : données invalides
+POST {{host}}/clients
+Content-Type: application/json
+
+{
+  "firstname": " ",
+  "lastname": "",
+  "email": "pas-un-email"
+}
+
+### Erreur 409 : email déjà utilisé
+POST {{host}}/clients
+Content-Type: application/json
+
+{
+  "firstname": "Autre",
+  "lastname": "Personne",
+  "email": "awa.diop@example.com"
+}
+
+### Erreur 404 : client inexistant
+GET {{host}}/clients/999999
+
+### ---------- Produits ----------
+
+### Créer un produit
+POST {{host}}/products
+Content-Type: application/json
+
+{
+  "name": "Riz 50kg",
+  "price": 25000
+}
+
+> {% client.global.set("productId", response.body.id); %}
+
+### Créer un second produit
+POST {{host}}/products
+Content-Type: application/json
+
+{
+  "name": "Sucre 1kg",
+  "price": 750.50
+}
+
+> {% client.global.set("productId2", response.body.id); %}
+
+### Lister les produits
+GET {{host}}/products
+
+### Détail d'un produit
+GET {{host}}/products/{{productId}}
+
+### Modifier un produit
+PUT {{host}}/products/{{productId}}
+Content-Type: application/json
+
+{
+  "name": "Riz 50kg",
+  "price": 26000
+}
+
+### Erreur 400 : prix négatif
+POST {{host}}/products
+Content-Type: application/json
+
+{
+  "name": "Produit",
+  "price": -5
+}
+
+### ---------- Commandes ----------
+
+### Créer une commande avec ses lignes
+POST {{host}}/orders
+Content-Type: application/json
+
+{
+  "clientId": {{clientId}},
+  "details": [
+    { "productId": {{productId}}, "quantite": 2 },
+    { "productId": {{productId2}}, "quantite": 3 }
+  ]
+}
+
+> {% client.global.set("orderId", response.body.id); client.global.set("detailId", response.body.details[0].id); %}
+
+### Lister les commandes
+GET {{host}}/orders
+
+### Détail d'une commande (avec le total)
+GET {{host}}/orders/{{orderId}}
+
+### Changer le client d'une commande
+PUT {{host}}/orders/{{orderId}}
+Content-Type: application/json
+
+{
+  "clientId": {{clientId}}
+}
+
+### Erreur 400 : commande sans ligne
+POST {{host}}/orders
+Content-Type: application/json
+
+{
+  "clientId": {{clientId}},
+  "details": []
+}
+
+### Erreur 404 : produit inexistant dans une ligne
+POST {{host}}/orders
+Content-Type: application/json
+
+{
+  "clientId": {{clientId}},
+  "details": [ { "productId": 999999, "quantite": 1 } ]
+}
+
+### ---------- Lignes de commande ----------
+
+### Ajouter une ligne
+POST {{host}}/orders/{{orderId}}/details
+Content-Type: application/json
+
+{
+  "productId": {{productId}},
+  "quantite": 1
+}
+
+### Lister les lignes
+GET {{host}}/orders/{{orderId}}/details
+
+### Détail d'une ligne
+GET {{host}}/orders/{{orderId}}/details/{{detailId}}
+
+### Modifier une ligne
+PUT {{host}}/orders/{{orderId}}/details/{{detailId}}
+Content-Type: application/json
+
+{
+  "productId": {{productId}},
+  "quantite": 5
+}
+
+### Supprimer une ligne
+DELETE {{host}}/orders/{{orderId}}/details/{{detailId}}
+
+### ---------- Suppressions ----------
+
+### Erreur 409 : client qui a des commandes
+DELETE {{host}}/clients/{{clientId}}
+
+### Erreur 409 : produit utilisé dans une commande
+DELETE {{host}}/products/{{productId}}
+
+### Supprimer la commande (supprime aussi ses lignes)
+DELETE {{host}}/orders/{{orderId}}
+
+### Supprimer le client
+DELETE {{host}}/clients/{{clientId}}
+
+### Supprimer les produits
+DELETE {{host}}/products/{{productId}}
+
+###
+DELETE {{host}}/products/{{productId2}}
