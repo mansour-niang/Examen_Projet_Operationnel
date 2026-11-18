@@ -12,12 +12,14 @@ import sn.unchk.Projet_Examen_PO.entity.Client;
 import sn.unchk.Projet_Examen_PO.exception.ConflictException;
 import sn.unchk.Projet_Examen_PO.exception.ResourceNotFoundException;
 import sn.unchk.Projet_Examen_PO.repository.ClientRepository;
+import sn.unchk.Projet_Examen_PO.repository.OrderRepository;
 
 @Service
 @RequiredArgsConstructor
 public class ClientService {
 
     private final ClientRepository clientRepository;
+    private final OrderRepository orderRepository;
 
     @Transactional
     public ClientResponseDTO addClient(ClientRequestDTO dto) {
@@ -53,7 +55,11 @@ public class ClientService {
 
     @Transactional
     public void deleteClient(Long id) {
-        clientRepository.delete(getClient(id));
+        Client client = getClient(id);
+        if (orderRepository.existsByClientId(id)) {
+            throw new ConflictException("Ce client a des commandes et ne peut pas être supprimé");
+        }
+        clientRepository.delete(client);
     }
 
     public Client getClient(Long id) {

@@ -9,7 +9,9 @@ import lombok.RequiredArgsConstructor;
 import sn.unchk.Projet_Examen_PO.dto.ProductRequestDTO;
 import sn.unchk.Projet_Examen_PO.dto.ProductResponseDTO;
 import sn.unchk.Projet_Examen_PO.entity.Product;
+import sn.unchk.Projet_Examen_PO.exception.ConflictException;
 import sn.unchk.Projet_Examen_PO.exception.ResourceNotFoundException;
+import sn.unchk.Projet_Examen_PO.repository.OrderDetailsRepository;
 import sn.unchk.Projet_Examen_PO.repository.ProductRepository;
 
 @Service
@@ -17,6 +19,7 @@ import sn.unchk.Projet_Examen_PO.repository.ProductRepository;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final OrderDetailsRepository orderDetailsRepository;
 
     @Transactional
     public ProductResponseDTO addProduct(ProductRequestDTO dto) {
@@ -46,7 +49,11 @@ public class ProductService {
 
     @Transactional
     public void deleteProduct(Long id) {
-        productRepository.delete(getProduct(id));
+        Product product = getProduct(id);
+        if (orderDetailsRepository.existsByProductId(id)) {
+            throw new ConflictException("Ce produit est utilisé dans des commandes et ne peut pas être supprimé");
+        }
+        productRepository.delete(product);
     }
 
     public Product getProduct(Long id) {
